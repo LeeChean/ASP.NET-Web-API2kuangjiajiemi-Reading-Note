@@ -4,11 +4,13 @@
 
     最近看了蒋金楠写的ASP.NET Web API2框架揭秘，特此记录下点滴收获。
 	
+	先了解一些准备知识：
+	
 	
 	
 	
 	URI、URL、URN的区别
-	URI(Uniform Resource Identifier)，统一资源标识符，是用来给资源起一个唯一的名字，主要目的是区分开不同的资源。这是一个很宽泛的概念。
+	URI(Uniform Resource Identifier)，统一资源标识符，是用来给资源起一个唯一的名字，主要目的是区分开不同的资源。这是一个很宽泛的概念。下面介绍的URL和URN其实都属于一种URI。
 	URL(Uniform Resource Location)，统一资源定位符，是用来标识一个资源的位置。是URI的一种表现形式。
 	URN(Uniform Resource Name)，统一资源名称，和URI的功能差不多，也是用来标识一个资源。也是URI的一种表现形式。
 	
@@ -25,23 +27,23 @@
 	
 	
 	关于RESTful
-	REST全称是Representational State Transfer，表现状态转换。REST不是一种具体的架构，而是一种理念，符合这种理念的架构就称之为RESTful架构。架构的核心思想就是所有的操作都是以资源为中心进行的，都是在改变资源的状态而已，这里的资源可以是具体的物理资源，如文字、
-	图片、音频、视频等，也可以是某种服务，所谓的状态改变指的是客户端通过http的get、post、put、delete对它们进行了增删改查操作。
-	有一种ROA(Rsource Oriented Architecture)，面向资源的架构，提出了一些基本特征，来指导我们构建RESTful Web API：
+	REST全称是Representational State Transfer，表现状态转换。REST不是一种具体的架构，而是一种理念，符合这种理念的架构就称之为RESTful架构。架构的核心思想就是所有的操作都是以资源为中心进行的，都是在改变资源的状态而已，
+	这里的资源可以是具体的物理资源，如文字、图片、音频、视频等，也可以是某种服务，所谓的状态改变指的是客户端通过http的get、post、put、delete等方法对它们进行增删改查操作。有一种ROA(Resource Oriented Architecture)，面向资源的架构，
+	提出了一些基本特征，来指导我们构建RESTful Web API：
 	1、采用URI标识资源                           
 	   一般使用URL，因为有定位的功能。
 	2、使用“链接”关联相关的资源 
        这样可以把所有的资源都串联起来，因为在RESTful架构中，资源是核心。
 	3、使用统一的接口   
-	   所有的Controller中只有Get、Create、Update、Delete这四种Action，如果有其他的说明还有资源没有抽取出来。
+	   所有的Controller中只有Get、Create、Update、Delete这四种Action，如果有其他的，说明还有资源没有抽取出来。
 	4、使用标准的HTTP方法
-	   HTTP方法即Get、Post、Put、Delete等。这条标准的含义是说具体的操作还要和HTTP方法对应起来，如获取资源要通过Get方法。ASP.NET Web API提供了Action名称和HTTP方法的自动映射功能，所以
-	   只要采用这样的命名规则即可，不用再单独添加[HttpGet]属性了。
+	   HTTP方法即Get、Post、Put、Delete等。这条标准的含义是说具体的操作还要和HTTP方法对应起来，如获取资源要通过Get方法。ASP.NET Web API提供了Action名称和HTTP方法的自动映射功能，所以只要采用这样的命名规则即可，不用再单独添加
+	   [HttpGet]属性了。
 	5、支持多种资源表示形式
 	   其实服务器端返回的并不是资源本身，而只是资源的一种表示形式，对Web来说，目前有两种主流的数据结构：XML和JSON，应该根据客户端的请求来提供对应的资源展示形式，不能只提供XMl或JSON一种形式，要灵活。至于客户端如何设置以何种
 	   方式展示，建议放在URL中，方便用浏览器调试。
 	6、无状态性
-	   即每次的请求都是独立的，不用将本次的请求信息记录在服务器端，以便用于后续来自相同客户端请求的处理。
+	   即每次的请求都是独立的，不用将本次的请求信息记录在服务器端以便用于后续来自相同客户端请求的处理。
 	
 	
 	
@@ -64,8 +66,48 @@
 	
 	
 	
-	前面都是一些基础问题，下面开始进入Web API框架。
-	在看书的过程中，有如下一些疑问：
-	1、Web API为什么要寄宿在某个应用上？都可以寄宿在什么应用上？
 	
+	
+	MVVM
+	MVVM是MVP的一种变体，全称是Model-View-ViewModel。一般用在WPF/Silverlight中。MVP又是MVC的变体。是Windows应用程序架构。Web中使用了MVVM模式的有一个Knockout框架，这是个JS框架。这块有空再深入了解。
+
+	
+	
+	
+	
+	
+	
+	
+	Web API为什么要寄宿在某个应用上？都可以寄宿在什么应用上？
+	因为Web API不能单独运行，只能依靠其他应用提供一个运行环境，这个环境可以监听并接收来自外界的请求，然后由ASP.NET路由系统决定交给API的哪个Controller、哪个Action来处理，最后将处理后生产的响应消息利用网络传输返回给客户端。
+	由于ASP.NET路由系统是一个独立的系统，所以可以寄宿在不同的应用上。如Web Host和Self Host，具体的先不了解。
+	   
+
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	ASP.NET路由系统 
+    下面详细说说ASP.NET路由系统，其实这个系统最开始不是为了ASP.NET MVC设计的，是为了帮助Web Form应用实现“请求地址与物理文件的分离”。	
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
 	
